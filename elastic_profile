@@ -1,0 +1,69 @@
+##########################################################################################
+# SCRIPT NAME: elastic_profile
+# DESCRIPTION: Elastic Utility Functions
+# AUTHOR: Chandra Munukutla
+# Assumptions: 1. we are on aws EC2 instance and aws cli is installed on the node.
+#              2. ec2-metatdata is installed
+#              3. jq utility is installed
+#              4. elastic search instance has an aws tag elastic-search
+#              5. Assuming a role exists for the EC2 node to execute aws cli commands
+##########################################################################################
+
+# Sourcing aws_checks file to get all the checks functions
+# assuming the file is in current directory.
+# if the pre-reqs are NOT installed, then the system will do exit 1
+source ./aws_checks
+#####################################################################
+PS1="[\u@\h \w]\$ "
+#####################################################################
+# Elastic Search Specific function
+# create "el" function only if we are on Elastic Search EC2 node with tag containing "elastic-search" string.
+
+if [[ $(aws ec2 describe-tags --filters "Name=key,Values=Name" "Name=resource-id,Values=$(ec2-metadata -i | cut -d' ' -f2)" --region us-east-1 | jq -cr .Tags[].Value) =~ "elastic-search" ]]; then
+   el()
+   {
+     if [[ $# -eq 1 ]]; then
+        case $1 in
+           health|status|cstatus|cluster_status)
+              curl -s localhost:9200/_cat/health | awk '{print $3,$4}'
+              ;;
+           mem|heap|memory)
+              curl -s localhost:9200/_cat/nodes | awk '{print $1,$3}'
+              ;;
+           node|nodes)
+              curl -s localhost:9200/_cat/nodes | awk '{print $1}'
+              ;;
+           node_count|nc)
+              curl -s http://localhost:9200/_cluster/health | jq -cr .number_of_nodes
+              ;;
+           cn|cluster_name)
+              curl -s http://localhost:9200/_cluster/health?level=cluster | jq -cr .cluster_name
+              ;;
+           indices|ind|indice)
+              curl -s localhost:9200/_cat/indices?v
+              ;;
+           li|list_indices)
+              curl -s localhost:9200/_cat/indices | awk '{print $3}'
+              ;;
+           m|master)
+		      curl -s localhost:9200/_cat/master | awk '{print $2}'
+              ;;
+		   me|meligible|master_eligible)
+		      curl -s localhost:9200/_cat/nodes | awk '{print $1,$7}'
+              ;;
+           *)
+             curl -s localhost:9200/_cat/nodes?v
+             echo "######################################################"
+             curl -s localhost:9200/_cat/indices?v
+             echo "######################################################"
+             ;;
+         esac
+     else
+         curl -s localhost:9200/_cat/nodes?v
+         echo "######################################################"
+         curl -s localhost:9200/_cat/indices?v
+         echo "######################################################"
+     fi
+   }
+fi
+#####################################################################
