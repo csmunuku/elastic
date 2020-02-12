@@ -46,10 +46,10 @@ if [[ $(aws ec2 describe-tags --filters "Name=key,Values=Name" "Name=resource-id
               curl -s localhost:9200/_cat/indices | awk '{print $3}'
               ;;
            m|master)
-		      curl -s localhost:9200/_cat/master | awk '{print $2}'
+              curl -s localhost:9200/_cat/master | awk '{print $2}'
               ;;
-		   me|meligible|master_eligible)
-		      curl -s localhost:9200/_cat/nodes | awk '{print $1,$7}'
+              me|meligible|master_eligible)
+              curl -s localhost:9200/_cat/nodes | awk '{print $1,$7}'
               ;;
            *)
              curl -s localhost:9200/_cat/nodes?v
